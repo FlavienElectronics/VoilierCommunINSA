@@ -1,0 +1,37 @@
+
+git clone [url repository] 							: télécharge le dossier à l'endroit où l'on se trouve dans la ligne de commande + créer un dossier 
+git status 									: ou suis-je
+git checkout [nom de branche] 							: changer de branche
+git branch [nom de la nouvelle branche] 					: créer une branche
+git add [nom de fichier ou * pour tous] 					: ajoute les fichiers modifiés au prochain commit
+git commit -m ["nom du commit"]							: faire un commit
+git push 									: envoi vers le serveur
+git merge [nom de la branche que l'on veut copier vers la branche actuelle] 	: pour combiner deux branches entre elles
+git pull 									: pour update le dossier en local + téléchargement des nouvelles branches
+
+HARD RESET VERS LE DERNIER COMMIT DU MAIN (Perte de toute les modifications postérieures)
+git fetch --all
+git branch backup-main
+git reset --hard origin/main
+
+
+
+POUR POUVOIR MODIFIER UN PROJET A DISTANCE SUR UN AUTRE PC
+
+Il faut avoir la PAT [Personnal Access Token]
+Ce token se trouve sur la page GitHub. 
+Il faut se connecter puis : 
+	- Clicker sur l'image de profil
+	- Settings
+	- Developer settings
+	- Personal access tokens
+	- Generate new token
+	- Cocher « write:packages »
+	- Cocher « project »
+	- Noter le token avant de valider
+	- Puis générer le token
+	
+Pour avoir a nouveau le token il faut Regenerate token
+
+Désormais que le token est obtenu, il sert de mot de passe pour se connecter.
+L'identifiant de connexion ne change pas.
