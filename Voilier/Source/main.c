@@ -1,91 +1,135 @@
 #include "stm32f10x.h"   // Pour la gestion de la carte STM32
 #include "application.h" // Contient les fonctions de haut niveau
 #include "driver.h"      // Contient les macros des ports et pins
+#include <stdio.h>
 
 int main(void)
 {
-  // Clock_Init_All();
 
   // Initialisation de la pin GPIO de la LED (Output push-pull)
   GPIO_PIN_Init(PORT_A, PIN_5, OUTPUT_10MHZ, GENERAL_PURPOSE_OUTPUT_PUSH_PULL);
-  GPIO_PIN_Init(PORT_C, PIN_8, OUTPUT_10MHZ, GENERAL_PURPOSE_OUTPUT_PUSH_PULL);
 
-  // Initialisation du bouton sur le GPIO PC13 (Floating input)
-  GPIO_PIN_Init(PORT_C, PIN_13, INPUT, FLOATING_INPUT);
-  GPIO_PIN_Init(PORT_C, PIN_10, INPUT, INPUT_PULL_UP);
-
-  // D�marrage du TIMER 2 pour une fr�quence de 2 secondes = 0,5 s
-
-  //TIMER_Interruption_Setup(TIM2, SET, 2, LED_TogglePA5);
-
-//Uniquement timer 2 et 3 fonctionnels
-  TIMER_Interruption_Setup(TIM2, SET, 2, LED_TogglePC8);
-
-  TIMER_Interruption_Setup(TIM3, SET, 4, LED_TogglePA5);
-
-  /*RESERVATION OF PA8 FOR PWM WITH TIMER 1*/
+  // Initialisation de la PIN A8 pour PWM du plateau
   GPIO_PIN_Init(PORT_A, PIN_8, OUTPUT_50MHZ,ALTERNATE_FUNCTION_OUTPUT_PUSH_PULL);
+	
+	// Initialisation des PIN A2 et A3 pour la communication UART1
+	GPIO_PIN_Init(PORT_A, PIN_2, OUTPUT_10MHZ, ALTERNATE_FUNCTION_OUTPUT_PUSH_PULL); // PA2 en mode alternatif pour TX
+	GPIO_PIN_Init(PORT_A, PIN_3, INPUT, FLOATING_INPUT); // PA3 en entrée flottante pour RX
+	
+	// Démarrage des TIMERS 1,2 et 3
+	TIMER_init(TIM1);		// TIMER 1 : PWM du moteur
+	TIMER_init(TIM2);		// TIMER 2 : Codeur incrémental de la girouette
+	PWM_Init(TIM1, 0);	// Initialisation de la PWM du moteur
+	
+	
+	// Initialisation et mise en marche des UARTS 1 et 2
+	USART1_init();
+	USART2_init();
+	
+	// Initialisation de la PIN C12 pour le contrôle du sens du moteur
+	GPIO_PIN_Init(PORT_C, PIN_12, OUTPUT_50MHZ, GENERAL_PURPOSE_OUTPUT_PUSH_PULL );
+	GPIO_PIN_Config(PORT_C, PIN_12, 0);
+	
+	// Initialisation des PIN A2 et A3 pour la communication UART2
+	GPIO_PIN_Init(PORT_A, PIN_9, OUTPUT_10MHZ, ALTERNATE_FUNCTION_OUTPUT_PUSH_PULL);
+	GPIO_PIN_Init(PORT_A, PIN_10, INPUT, FLOATING_INPUT);
+	
+	// Initialisation des PIN pour les signaux de la girouette
+	GPIO_PIN_Init(PORT_A, PIN_0, INPUT, FLOATING_INPUT);		// GIROUETTE CHA
+	GPIO_PIN_Init(PORT_A, PIN_1, INPUT, FLOATING_INPUT);		// GIROUETTE CHB
+	GPIO_PIN_Init(PORT_C, PIN_10, INPUT, FLOATING_INPUT);		// GIROUETTE INDEX
+	
+	// Broche PWM de sortie pour contrôle servo moteur
+	//GPIO_PIN_Init(PORT_B, PIN_0, OUTPUT_50MHZ, ALTERNATE_FUNCTION_OUTPUT_PUSH_PULL);
+	//TIMER_init(TIM3);		// TIMER 3 : PWM du servo
+	PWM3_Init(50);	// PWM du servo-moteur
+	//PWM3_Set(TIM3, 50);
+				
+	Welcome();
+	
+	// Déclaration de l'interruption sur PC10 pour l'index de la girouette
+	GPIO_EXTI_PC10_Init();
+	
+	// Démarrage ADC : PIN C0 pour la lecture de la tension de la batterie
+	Start_ADC1(PORT_C, PIN_4);
 		
+	// Initialisation et démarrage du codeur incrémental
+	ENCODEUR_init(TIM2);
 	
-	GPIO_PIN_Init(PORT_A, PIN_0, INPUT, ANALOG_MODE);
-	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
-	
-	ADC1->CR2 |= (0x01 << 0); // aDON à 1 = TURN ON
-	
-	ADC1->CR2 |= (0x01 << 17) | (0x01 << 18) | (0x01 << 19); // EXTSEL
-		
-	RCC->CFGR = (RCC->CFGR |(0x1 << 15)) & ~(0x1 << 14);	//PRESCALER ADC mis à 6
-	
-	uint16_t data_read;
-	PWM_Init(TIM1, 20);
-	ADC1->CR2 |= ADC_CR2_EXTTRIG;
-	while (1){
-		ADC1->CR2 |= ADC_CR2_SWSTART; //Demarrage de conversion SWSTART
-		
-		while (!(((ADC1->SR) >> 1) & 0x01)){
-		}
-		
-		data_read = ADC1->DR;
-		if (data_read != 0){
-			int call_of_duty = 100*data_read/4095;
-			PWM_Set(TIM1, call_of_duty);
-		}
-	}
-	
-	PWM_Init(TIM1, 20);
-	while (1){
-			for (int i = 0; i <= 100; i++){
-				PWM_Set(TIM1, i);
-				for (int y = 0; y < 100000; y++){
-					int a = 0;
-					a = 10;
-					a = y * 2;
-				}
-			}
-	}
 
-  while (1)
-  {
-    // Verification de la pression sur le bouton (logique inverse)
-    /*if (GPIO_PIN_Read(PORT_C, PIN_13) == 0)
-    {
-        // Allumage de la LED VERTE
-        LED_ON();
-    }
-    else
-    {
-        // Extinction de la LED VERTE
-        LED_OFF();
-    }
-    if (GPIO_PIN_Read(PORT_C, PIN_10) == 0)
-    {
-        // Allumage de la LED ROUGE ext.
-        GPIO_Pin_Set(GPIOC, PIN_8);
-    }
-    else
-    {
-        // Extinction de la LED ROUGE ext.
-        GPIO_Pin_Reset(GPIOC, PIN_8);
-    }*/
-  }
+	
+	while(1){
+		char reception = USART1_Receive();
+		/*char reception_cpy = reception;
+		USART2_Transmit(" >> Valeur USART 1 : ");
+		char buffer0[3];
+		sprintf(buffer0,"%d",reception_cpy);
+		USART2_Transmit(buffer0);
+		USART2_Transmit("\n\r");*/
+		
+		// 100->1    : GAUCHE
+		// 255->156  : DROITE
+		
+		int tmp = (256 - (int)reception);
+			
+		/*char buffer[32];
+		sprintf(buffer, "tmp : %d\trec : %d", tmp, reception);
+		USART2_Transmit(buffer);
+		USART2_Transmit("\n\r");*/
+		
+		int bat = BatteryRead();
+		
+		int val = TIM2->CNT;
+		/*USART2_Transmit(" >> Valeur compteur : ");
+		char buffer_girouette[32];
+		sprintf(buffer_girouette, "%d\t[%d]\t[%d pourcent]", val, GPIO_PIN_Read(PORT_C, PIN_10), bat);
+		USART2_Transmit(buffer_girouette);
+		USART2_Transmit("\n\r");*/
+
+		if (reception < 101 & reception != 0)
+		{
+			PWM_Set(TIM1, reception);
+			GPIO_Pin_Reset(GPIOC, PIN_12);
+		}else if(reception > 155)
+		{
+			//USART2_Transmit("DROITE\n\r");
+			PWM_Set(TIM1, tmp);
+			GPIO_Pin_Set(GPIOC, PIN_12);
+		}else
+		{
+			PWM_Set(TIM1, 0);
+		}
+		
+		PWM_Servo_Set((100*val)/(1400));
+		
+		char buffer_batterie[32];
+		sprintf(buffer_batterie, "Charge batterie : %d pourcent", bat);
+		USART1_Transmit(buffer_batterie);
+		USART1_Transmit("\n\r");
+			
+	
+		/*char buffer1[32];
+		sprintf(buffer1, "SERVO : %d\tVAL : %d", tmp0, val);
+		USART2_Transmit(buffer1);
+		USART2_Transmit("\n\r");*/
+		
+				
+		/*if (val < 65536 && val > 65535/2){		//599 (1 %) et 5999 (10 %) - ENTRE 65535 et 64150
+			//PWM3_Set(1);
+			int tmp = PWM_Servo_Set(100*(val-64150)/1385);
+			char buffer[32];
+			sprintf(buffer, "SERVO (1) : %d", tmp);
+			USART2_Transmit(buffer);
+			USART2_Transmit("\n\r");
+			LED_OFF();
+		}else{																// ENTRE 0 et 1385
+			//PWM3_Set(10);
+			int tmp = PWM_Servo_Set(100*(val)/1385);
+			char buffer[32];
+			sprintf(buffer, "SERVO : %d", tmp);
+			USART2_Transmit(buffer);
+			USART2_Transmit("\n\r");
+			LED_ON();
+		}*/
+	}
 }

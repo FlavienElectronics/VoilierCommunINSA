@@ -6,3 +6,5 @@ void LED_OFF(void);
 void LED_TogglePA5(void);
 void LED_TogglePC8(void);
 
+int BatteryRead(void);
+void Welcome(void);

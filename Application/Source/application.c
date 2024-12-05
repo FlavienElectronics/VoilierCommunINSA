@@ -30,3 +30,21 @@ void LED_TogglePC8(void){
 				GPIO_Pin_Reset(GPIOC, PIN_8);
 		}
 }
+
+int BatteryRead(void){
+	int data_read;
+	data_read = Read_ADC1();
+	if (data_read != 0){
+		return 359*data_read/4095;
+	}else{ return 0; }
+}
+
+void Welcome(void){
+	USART2_Transmit("CARTE RESET\n\r");
+	for (int i = 0; i < 5; i++){
+		LED_ON();
+		for (int y = 0; y < 100000; y++);
+		LED_OFF();
+		for (int y = 0; y < 100000; y++);
+	}
+}

@@ -84,6 +84,8 @@ int GPIO_ReadPin(GPIO_TypeDef *GPIO, int pin);
 int GPIO_PIN_Init(int port, int pin, int mode, int config);
 int GPIO_PIN_Config(int port, int pin, int conf);
 int GPIO_PIN_Read(int port, int pin);
+void GPIO_EXTI_PC10_Init(void);
+void EXTI15_10_IRQHandler(void);
 
 uint16_t GET_ARR(int frequency);
 
@@ -92,6 +94,8 @@ int TIMER_Reset(TIM_TypeDef *timerAddress);
 int TIMER_Config(TIM_TypeDef *timerAddress,int config, int frequency);
 int TIMER_exist(TIM_TypeDef *timerAddress);
 int TIMER_Interruption_Setup(TIM_TypeDef *timerAddress, int config, int frequency, void (*functionPointer)(void));
+void ENCODEUR_init(TIM_TypeDef *TIMx);
+void TIMER_init(TIM_TypeDef *timerAddress);
 
 int NVIC_Enable(TIM_TypeDef *timerAddress, int priority_value);
 int NVIC_Disable(TIM_TypeDef *timerAddress);
@@ -99,5 +103,17 @@ int NVIC_Disable(TIM_TypeDef *timerAddress);
 int PWM_Init(TIM_TypeDef *timerAddress, int duty);
 int PWM_Set(TIM_TypeDef *timerAddress, int duty);
 uint16_t GET_ARR_Duty(int _arr, int _duty);
+void PWM3_Init(int duty);
+void PWM3_Set(int duty);
+int PWM_Servo_Set(int duty);
 
 int ResetInterruptFlag(TIM_TypeDef *timerAddress);
+
+void Start_ADC1(int PORT, int PIN);
+uint16_t Read_ADC1();
+void USART2_Transmit(char *data);
+char USART2_Receive(void);
+void USART1_Transmit(char *data);
+char USART1_Receive(void);
+void USART1_init();
+void USART2_init();
