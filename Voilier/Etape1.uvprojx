@@ -399,6 +399,11 @@
               <FileType>1</FileType>
               <FilePath>..\Drivers\Sources\driver.c</FilePath>
             </File>
+            <File>
+              <FileName>Lib_Com_Periph_2022.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\Drivers\Sources\Lib_Com_Periph_2022\Lib_Com_Periph_2022.lib</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -813,6 +818,11 @@
               <FileName>driver.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Drivers\Sources\driver.c</FilePath>
+            </File>
+            <File>
+              <FileName>Lib_Com_Periph_2022.lib</FileName>
+              <FileType>4</FileType>
+              <FilePath>..\Drivers\Sources\Lib_Com_Periph_2022\Lib_Com_Periph_2022.lib</FilePath>
             </File>
           </Files>
         </Group>

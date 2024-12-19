@@ -561,20 +561,21 @@ void TIM2_IRQHandler(void)
 	if (TIMER_Interrupt_Function_Pointer[2] != 0)
 		(*TIMER_Interrupt_Function_Pointer[2])();
 }
+
 void TIM3_IRQHandler(void)
 {
 	ResetInterruptFlag(TIM3);
 	if (TIMER_Interrupt_Function_Pointer[3] != 0)
 		(*TIMER_Interrupt_Function_Pointer[3])();
 }
-
+/*
 void TIM4_IRQHandler(void)
 {
 	ResetInterruptFlag(TIM4);
 	if (TIMER_Interrupt_Function_Pointer[4] != 0)
 		(*TIMER_Interrupt_Function_Pointer[4])();
 }
-
+*/
 /* ========== REGION : ADC ========== */
 
 void Start_ADC1(int PORT, int PIN){
@@ -603,7 +604,7 @@ void USART2_init(){
 	USART2->CR1 &= ~(USART_CR1_M);  // Longueur de mot 8 bits
 	USART2->CR2 &= ~(USART_CR2_STOP); // 1 bit de stop
 	USART2->CR3 &= ~(USART_CR3_DMAR); // Désactiver DMAR si le DMA n'est pas utilisé
-	USART2->BRR = FREQUENCE_STM32 / 9600; // Définir le baud rate
+	USART2->BRR = 36000000 / 9600; // Définir le baud rate
 	USART2->CR1 |= USART_CR1_TE | USART_CR1_RE; // Activation transmission et réception
 	USART2->CR1 |= USART_CR1_UE; // Activation USART après configuration
 }
@@ -616,7 +617,7 @@ void USART1_init(){
 	USART1->CR1 &= ~(USART_CR1_M);  // Longueur de mot 8 bits
 	USART1->CR2 &= ~(USART_CR2_STOP); // 1 bit de stop
 	USART1->CR3 &= ~(USART_CR3_DMAR); // Désactiver DMAR si le DMA n'est pas utilisé
-	USART1->BRR = FREQUENCE_STM32 / 9600; // Définir le baud rate
+	USART1->BRR = 72000000 / 9600; // Définir le baud rate
 	USART1->CR1 |= USART_CR1_TE | USART_CR1_RE; // Activation transmission et réception
 	USART1->CR1 |= USART_CR1_UE; // Activation USART après configuration
 }
@@ -680,4 +681,80 @@ void EXTI15_10_IRQHandler(void) {
 				TIM2->CNT = 700;
     }
 }
+
+// --- I2C ---
+
+void I2C1_Init(void) {
+    // 1. Activer les horloges pour I2C1 et GPIOB
+    RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;   // Activer l'horloge GPIOB
+    RCC->APB1ENR |= RCC_APB1ENR_I2C1EN;  // Activer l'horloge I2C1
+
+    // 2. Configurer PB6 (SCL) et PB7 (SDA) en mode alternatif ouvert avec pull-up
+    GPIOB->CRL &= ~(GPIO_CRL_CNF6 | GPIO_CRL_CNF7 | GPIO_CRL_MODE6 | GPIO_CRL_MODE7);
+    GPIOB->CRL |= (GPIO_CRL_CNF6_1 | GPIO_CRL_CNF7_1 | GPIO_CRL_MODE6 | GPIO_CRL_MODE7); // Alternate Function, 50 MHz
+    GPIOB->ODR |= (1 << 6) | (1 << 7); // Activer les résistances pull-up
+
+    // 3. Réinitialiser I2C1 et configurer
+    I2C1->CR1 = I2C_CR1_SWRST;  // Réinitialisation logicielle
+    I2C1->CR1 = 0;              // Quitter le mode de réinitialisation
+
+    // 4. Configurer la vitesse de communication
+    I2C1->CR2 = 36;             // PCLK1 à 36 MHz
+    I2C1->CCR = 180;            // 100 kHz : CCR = PCLK1 / (2 * fréquence I2C)
+    I2C1->TRISE = 37;           // TRISE = PCLK1/1 MHz + 1
+
+    // 5. Activer I2C
+    I2C1->CR1 |= I2C_CR1_PE;    // Activer le périphérique I2C
+}
+void I2C_Start(uint8_t address, uint8_t direction) {
+    // Direction: 0 = Write, 1 = Read
+    I2C1->CR1 |= I2C_CR1_START;            // Générer un start condition
+    while (!(I2C1->SR1 & I2C_SR1_SB));     // Attendre que le bit de start soit réglé
+
+    (void)I2C1->SR1;                       // Lecture pour effacer le flag SB
+    I2C1->DR = (address << 1) | direction; // Envoyer l'adresse avec LSB comme direction
+    while (!(I2C1->SR1 & I2C_SR1_ADDR));   // Attendre l'acquittement
+    (void)I2C1->SR1;                       // Lecture SR1 et SR2 pour effacer ADDR
+    (void)I2C1->SR2;
+}
+
+void I2C_Stop(void) {
+    I2C1->CR1 |= I2C_CR1_STOP;             // Générer une condition d'arrêt
+}
+
+void I2C_Write(uint8_t data) {
+    I2C1->DR = data;                       // Charger le registre de données
+    while (!(I2C1->SR1 & I2C_SR1_TXE));    // Attendre que le tampon soit vide
+}
+
+uint8_t I2C_ReadAck(void) {
+    I2C1->CR1 |= I2C_CR1_ACK;              // Activer l'acquittement
+    while (!(I2C1->SR1 & I2C_SR1_RXNE));   // Attendre que les données soient reçues
+    return I2C1->DR;                       // Lire les données
+}
+
+uint8_t I2C_ReadNack(void) {
+    I2C1->CR1 &= ~I2C_CR1_ACK;             // Désactiver l'acquittement
+    while (!(I2C1->SR1 & I2C_SR1_RXNE));   // Attendre que les données soient reçues
+    return I2C1->DR;                       // Lire les données
+}
+
+void DS1307_Write(uint8_t reg, uint8_t data) {
+    I2C_Start(0x68, 0);      // Adresse du DS1307 (0x68), direction écriture
+    I2C_Write(reg);          // Adresse du registre
+    I2C_Write(data);         // Données à écrire
+    I2C_Stop();
+}
+
+uint8_t DS1307_Read(uint8_t reg) {
+    uint8_t data;
+    I2C_Start(0x68, 0);      // Adresse du DS1307 (0x68), direction écriture
+    I2C_Write(reg);          // Adresse du registre
+    I2C_Start(0x68, 1);      // Adresse du DS1307 (0x68), direction lecture
+    data = I2C_ReadNack();   // Lire la donnée sans ACK
+    I2C_Stop();
+    return data;
+}
+
+
 

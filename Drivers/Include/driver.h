@@ -70,6 +70,19 @@
 #define PRIORITY_LOW 3
 #define PRIORITY_LEGACY 5
 
+// Definition des adresses des registres de l'ADXL345
+#define POWER_CTL 0x2D 
+#define DATA_FORMAT 0x31 
+#define BW_RATE 0x2C 
+#define DATAX0 0x32 
+#define DATAX1 0x33 
+#define DATAY0 0x34 
+#define DATAY1 0x35 
+#define DATAZ0 0x36 
+#define DATAZ1 0x37 
+#define MASK 0x80
+#define GRAVITE 9.81
+
 // Function declarations
 void Clock_Init_All(void);
 int Clock_Set(GPIO_TypeDef *GPIO);
@@ -117,3 +130,21 @@ void USART1_Transmit(char *data);
 char USART1_Receive(void);
 void USART1_init();
 void USART2_init();
+
+// Partie Anti-Chavirement
+
+void ReadAccel();
+
+void MySPI_WriteRegister(char reg, char value) ;
+int MySPI_ReadRegister(char reg);
+void ADXL_Init();
+int calculate_angle(int16_t accel_x,int16_t accel_z);
+//double afficher_angle(double angle) ;
+//void MySPI_Send_With_CS( char ByteToSend);
+
+void UART_Init();
+void UART_SendChar(char c);
+void UART_SendString(const char *str) ;
+
+//void Init_PWM_Servo_20khz(TIM_TypeDef *timerAdress);
+//void PWM_Set_ServoPosition(TIM_TypeDef *timerAdress, int duty);
