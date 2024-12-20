@@ -133,18 +133,15 @@ void USART2_init();
 
 // Partie Anti-Chavirement
 
-void ReadAccel();
+/*=============================== SPI =============================*/
 
-void MySPI_WriteRegister(char reg, char value) ;
+/* Fonction d'écriture SPI */
+void MySPI_WriteRegister(char reg, char value);
+
+/* Fonction de lecture SPI */
 int MySPI_ReadRegister(char reg);
-void ADXL_Init();
-int calculate_angle(int16_t accel_x,int16_t accel_z);
-//double afficher_angle(double angle) ;
-//void MySPI_Send_With_CS( char ByteToSend);
 
-void UART_Init();
-void UART_SendChar(char c);
-void UART_SendString(const char *str) ;
+/*=============================== I2C =============================*/
 
-//void Init_PWM_Servo_20khz(TIM_TypeDef *timerAdress);
-//void PWM_Set_ServoPosition(TIM_TypeDef *timerAdress, int duty);
+/* Gestion d'erreur de communication I2C */
+void I2C_Error_Callback(void);
