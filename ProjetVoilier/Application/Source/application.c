@@ -63,6 +63,7 @@ void ADXL345_lire_accel(int16_t *accel_x, int16_t *accel_y, int16_t *accel_z)
 	*accel_y = (MySPI_ReadRegister(DATAY1) << 8) | MySPI_ReadRegister(DATAY0);
 	*accel_z = (MySPI_ReadRegister(DATAZ1) << 8) | MySPI_ReadRegister(DATAZ0);
 }
+
 /*Fonction d'empechement de chavirement du voilier */
 int ADXL345_anti_chavirement(void)
 {
@@ -127,9 +128,6 @@ void DS1307_ReadTime(char *hours, char *minutes, char *seconds)
 	*minutes = BCD_To_Decimal(time_data[1]);
 	*hours = BCD_To_Decimal(time_data[2] & 0x3F); // Heures (format 24h)
 }
-
-
-
 
 
 /* Affichage de l'heure */

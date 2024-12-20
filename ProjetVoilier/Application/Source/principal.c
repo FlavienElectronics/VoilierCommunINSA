@@ -21,7 +21,6 @@ Groupe 4AE-SE3
 
 int main(void)
 {
-
 	// Initialisation de la pin GPIO de la LED (Output push-pull)
 	GPIO_PIN_Init(PORT_A, PIN_5, OUTPUT_10MHZ, GENERAL_PURPOSE_OUTPUT_PUSH_PULL);
 
@@ -29,8 +28,8 @@ int main(void)
 	GPIO_PIN_Init(PORT_A, PIN_8, OUTPUT_50MHZ, ALTERNATE_FUNCTION_OUTPUT_PUSH_PULL);
 
 	// Initialisation des PIN A2 et A3 pour la communication UART1
-	GPIO_PIN_Init(PORT_A, PIN_2, OUTPUT_10MHZ, ALTERNATE_FUNCTION_OUTPUT_PUSH_PULL); // PA2 en mode alternatif pour TX
-	GPIO_PIN_Init(PORT_A, PIN_3, INPUT, FLOATING_INPUT);							 // PA3 en entree flottante pour RX
+	GPIO_PIN_Init(PORT_A, PIN_2, OUTPUT_10MHZ, ALTERNATE_FUNCTION_OUTPUT_PUSH_PULL); 	// PA2 en mode alternatif pour TX
+	GPIO_PIN_Init(PORT_A, PIN_3, INPUT, FLOATING_INPUT);							 								// PA3 en entree flottante pour RX
 
 	// Demarrage des TIMERS 1,2 et 3
 	TIMER_init(TIM1);  // TIMER 1 : PWM du moteur
@@ -54,27 +53,22 @@ int main(void)
 	GPIO_PIN_Init(PORT_A, PIN_1, INPUT, FLOATING_INPUT);  // GIROUETTE CHB
 	GPIO_PIN_Init(PORT_C, PIN_10, INPUT, FLOATING_INPUT); // GIROUETTE INDEX
 
-	// Broche PWM de sortie pour controle servo moteur
 	PWM3_Init(50); // PWM du servo-moteur
 
-	Welcome();
+	Welcome(); // Clignottement de la LED verte
 
-	// Declaration de l'interruption sur PC10 pour l'index de la girouette
-	GPIO_EXTI_PC10_Init();
+	GPIO_EXTI_PC10_Init(); // Declaration de l'interruption sur PC10 pour l'index de la girouette
+	
+	Start_ADC1(PORT_C, PIN_4); // Demarrage ADC : PIN C0 pour la lecture de la tension de la batterie
 
-	// Demarrage ADC : PIN C0 pour la lecture de la tension de la batterie
-	Start_ADC1(PORT_C, PIN_4);
-
-	// Initialisation et demarrage du codeur incremental
-	CODEUR_init(TIM2);
+	CODEUR_init(TIM2); // Initialisation et demarrage du codeur incremental
 
 	MySPI_Init(SPI1); // Initialisation SPI
 	ADXL345_Init();	  // Initialisation ADXL345
 
 	MyI2C_Init(I2C1, 2, I2C_Error_Callback); // Initialiser I2C1 avec la fonction callback d'erreur
 
-	// Initialisation du DS1307
-	DS1307_Init();
+	DS1307_Init(); // Initialisation du DS1307
 
 	int risqueChavirement = 0; // Indique si l'angle du navire depasse la limite
 
@@ -110,13 +104,16 @@ int main(void)
 		}
 		/* 3- END */
 
-		/* 4- Gestion du servo moteur lie au bordage des voiles */
+		/* 4- Gestion de la girouette */
 		int val = TIM2->CNT;
+		/* 4- END */
+		
+		/* 5- Gestion du servo moteur lie au bordage des voiles */
 		if (risqueChavirement == 0)
 			PWM_Servo_Set((100 * val) / (1400));
-		/* 4- END */
+		/* 5- END */
 
-		/* 5- Gestion de l'heure avec la RTC */
+		/* 6- Gestion de l'heure avec la RTC */
 		if (I2C_Error)
 		{
 			USART2_Transmit("Erreur I2C detectee !\n");
@@ -126,10 +123,10 @@ int main(void)
 		{
 			Display_Time(); // Lire et afficher l'heure
 		}
-		/* 5- END */
+		/* 6- END */
 
-		/* 6- Gestion du risque de chavirement du navire */
+		/* 7- Gestion du risque de chavirement du navire avec la IMU*/
 		risqueChavirement = ADXL345_anti_chavirement();
-		/* 6- END*/
+		/* 7- END*/
 	}
 }
