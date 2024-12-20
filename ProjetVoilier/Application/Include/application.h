@@ -67,4 +67,6 @@ uint8_t Decimal_To_BCD(uint8_t dec);
 /* Relache les voiles si l'angle critique est depasse */
 void relacher_voiles();
 
+/* Affiche que la qu'une erreur s'est produire sur la liaison I2C*/
+void I2C_Error_Callback(void);
 

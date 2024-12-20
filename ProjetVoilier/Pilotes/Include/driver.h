@@ -109,7 +109,7 @@ int TIMER_Reset(TIM_TypeDef *timerAddress);
 int TIMER_Config(TIM_TypeDef *timerAddress,int config, int frequency);
 int TIMER_exist(TIM_TypeDef *timerAddress);
 int TIMER_Interruption_Setup(TIM_TypeDef *timerAddress, int config, int frequency, void (*functionPointer)(void));
-void ENCODEUR_init(TIM_TypeDef *TIMx);
+void CODEUR_init(TIM_TypeDef *TIMx);
 void TIMER_init(TIM_TypeDef *timerAddress);
 
 int NVIC_Enable(TIM_TypeDef *timerAddress, int priority_value);

@@ -94,7 +94,7 @@ int TIMER_Reset(TIM_TypeDef *timerAddress);
 int TIMER_Config(TIM_TypeDef *timerAddress,int config, int frequency);
 int TIMER_exist(TIM_TypeDef *timerAddress);
 int TIMER_Interruption_Setup(TIM_TypeDef *timerAddress, int config, int frequency, void (*functionPointer)(void));
-void ENCODEUR_init(TIM_TypeDef *TIMx);
+void CODEUR_init(TIM_TypeDef *TIMx);
 void TIMER_init(TIM_TypeDef *timerAddress);
 
 int NVIC_Enable(TIM_TypeDef *timerAddress, int priority_value);
@@ -117,12 +117,3 @@ void USART1_Transmit(char *data);
 char USART1_Receive(void);
 void USART1_init();
 void USART2_init();
-
-void I2C1_Init(void);
-void I2C_Start(uint8_t address, uint8_t direction);
-void I2C_Stop(void);
-void I2C_Write(uint8_t data);
-uint8_t I2C_ReadAck(void);
-uint8_t I2C_ReadNack(void);
-void DS1307_Write(uint8_t reg, uint8_t data);
-uint8_t DS1307_Read(uint8_t reg);

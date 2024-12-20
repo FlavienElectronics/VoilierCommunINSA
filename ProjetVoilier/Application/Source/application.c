@@ -6,17 +6,19 @@ char I2C_Error = 0;
 MyI2C_RecSendData_Typedef I2C_SendData;
 MyI2C_RecSendData_Typedef I2C_ReceiveData;
 
+/*Allumage de la LED verte embarquee*/
 void LED_ON(void)
 {
 	GPIO_Pin_Set(GPIOA, PIN_5);
 }
 
+/*Extinction de la LED verte embarquee*/
 void LED_OFF(void)
 {
 	GPIO_Pin_Reset(GPIOA, PIN_5);
 }
 
-
+/* Fonction de lecture du niveau de batterie */
 int BatteryRead(void)
 {
 	int data_read;
@@ -31,7 +33,7 @@ int BatteryRead(void)
 	}
 }
 
-
+/* Permet de faire clignoter la LED verte sur la carte pour distinguer un RESET */
 void Welcome(void)
 {
 	USART2_Transmit("CARTE RESET\n\r");
@@ -46,22 +48,22 @@ void Welcome(void)
 	}
 }
 
-/*																								Communication en SPI */
-
+/* =============================== PARTIE ADXL345 (SPI) ============================= */
+/* Fonction d'initialisation de l'ADXL345 */
 void ADXL345_Init()
 {
 	MySPI_WriteRegister(POWER_CTL, 0x08);
 	MySPI_WriteRegister(DATA_FORMAT, 0x0B);
 	// BW_RATE configuré par défaut à 100 Hz
 }
-
+/* Lecture des données brutes de l'ADXL345 */
 void ADXL345_lire_accel(int16_t *accel_x, int16_t *accel_y, int16_t *accel_z)
 {
 	*accel_x = (MySPI_ReadRegister(DATAX1) << 8) | MySPI_ReadRegister(DATAX0);
 	*accel_y = (MySPI_ReadRegister(DATAY1) << 8) | MySPI_ReadRegister(DATAY0);
 	*accel_z = (MySPI_ReadRegister(DATAZ1) << 8) | MySPI_ReadRegister(DATAZ0);
 }
-
+/*Fonction d'empechement de chavirement du voilier */
 int ADXL345_anti_chavirement(void)
 {
 	int16_t accel_x, accel_y, accel_z;
@@ -91,7 +93,8 @@ int ADXL345_anti_chavirement(void)
 	return (0);
 }
 
-
+/*=============================== PARTIE DS1307 (I²C) =============================*/
+/* Initialisation du DS1307 */
 void DS1307_Init(void)
 {
 	char initial_time[3];
@@ -109,6 +112,7 @@ void DS1307_Init(void)
 	USART2_Transmit("Heure initialisée à 12:30:00\n");
 }
 
+/* Lecture de l'heure */
 void DS1307_ReadTime(char *hours, char *minutes, char *seconds)
 {
 	char time_data[3] = {0}; // Buffer pour stocker les données
@@ -124,6 +128,11 @@ void DS1307_ReadTime(char *hours, char *minutes, char *seconds)
 	*hours = BCD_To_Decimal(time_data[2] & 0x3F); // Heures (format 24h)
 }
 
+
+
+
+
+/* Affichage de l'heure */
 void Display_Time(void)
 {
 	char hours, minutes, seconds;
@@ -137,32 +146,33 @@ void Display_Time(void)
 	USART1_Transmit(buffer);
 }
 
-
-void I2C_Error_Callback(void) 
-{
-    I2C_Error = 1;  // Flag d'erreur
-    USART2_Transmit("Erreur I2C détectée !\n");
-}
-
-
+/* Calcul de l'angle de roulis en degres */
 int calculate_angle(int16_t accel_y, int16_t accel_z)
 {
 	return atan2((double)accel_y, (double)accel_z) * (180.0 / 3.14);
 }
 
+/* Converti une valeur BCD en valeur decimale */
 uint8_t BCD_To_Decimal(uint8_t bcd)
 {
 	return ((bcd >> 4) * 10) + (bcd & 0x0F);
 }
 
+/* Converti une valeur decimale en valeur BCD */
 uint8_t Decimal_To_BCD(uint8_t dec)
 {
 	return ((dec / 10) << 4) | (dec % 10);
 }
 
+/* Relache les voiles si l'angle critique est depasse */
 void relacher_voiles()
 {
 	PWM3_Set((100 * PWM_DUTY_VOILE_FERME) / (1400)); // Ouvrir les voiles
 }
 
-
+/* Affiche que la qu'une erreur s'est produire sur la liaison I2C*/
+void I2C_Error_Callback(void)
+{
+	I2C_Error = 1; // Flag d'erreur
+	USART2_Transmit("Erreur I2C détectée !\n");
+}

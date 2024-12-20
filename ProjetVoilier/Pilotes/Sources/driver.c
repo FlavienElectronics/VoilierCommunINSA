@@ -88,18 +88,22 @@ int TIMER_exist(TIM_TypeDef *timerAddress)
 	return (i);
 }
 
+
+
 /*
-		P�riode PSC = P�riode_Horloge * (PSC + 1)
-		P�riode TIMER = P�riode_PSC * (ARR + 1) = P�riode_Horloge * (PSC + 1) * (ARR + 1)
+		Periode PSC = Periode_Horloge * (PSC + 1)
+		Periode TIMER = Periode_PSC * (ARR + 1) = Periode_Horloge * (PSC + 1) * (ARR + 1)
 */
 
-void TIMER_init(TIM_TypeDef *timerAddress){
+void TIMER_init(TIM_TypeDef *timerAddress)
+{
 	RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
 	timerAddress->CNT = 0;
 	timerAddress->DIER |= (0x01 << 0);
 	timerAddress->CR1 |= TIM_CR1_CEN;
 }
 
+/*Active et initialise un timer*/
 int TIMER_Set(TIM_TypeDef *timerAddress, uint16_t ARR_value, int _prescaler)
 {
 	int index = TIMER_exist(timerAddress);
@@ -124,9 +128,12 @@ int TIMER_Set(TIM_TypeDef *timerAddress, uint16_t ARR_value, int _prescaler)
 		return -1;
 	}
 	// Configure the registers
-	if (_prescaler == -1){
+	if (_prescaler == -1)
+	{
 		timerAddress->PSC = PRESCALER;
-	}else{
+	}
+	else
+	{
 		timerAddress->PSC = _prescaler;
 	}
 	timerAddress->ARR = ARR_value;
@@ -137,6 +144,7 @@ int TIMER_Set(TIM_TypeDef *timerAddress, uint16_t ARR_value, int _prescaler)
 	return 0;
 }
 
+/*Eteint l'horloge d'un timer*/
 int TIMER_Reset(TIM_TypeDef *timerAddress)
 {
 	int index = TIMER_exist(timerAddress);
@@ -147,37 +155,34 @@ int TIMER_Reset(TIM_TypeDef *timerAddress)
 	return 0;
 }
 
+/*Renvoie une valeur de ARR pour une frequence d'interruption desiree*/
 uint16_t GET_ARR(int frequency)
 {
 	uint16_t ARR = (FREQUENCE_STM32 / ((PRESCALER + 1) * frequency)) - 1;
 	return ARR;
 }
 
-void ENCODEUR_init(TIM_TypeDef *TIMx){
-	// 2. Configurer les entrées TI1 et TI2 pour le codeur
-	// a. Mapper les signaux sur TI1 et TI2
-	TIMx->CCMR1 |= (1 << 0) | (1 << 8); // TI1FP1 et TI2FP2
-	// b. Configurer les polarités (non inversées ici) et activer les canaux
-	TIMx->CCER &= ~(TIM_CCER_CC1P | TIM_CCER_CC2P); // Polarité non inversée
-	TIMx->CCER |= (TIM_CCER_CC1E | TIM_CCER_CC2E); // Activer les entrées
+/*Permet d'initialiser le codeur incremental pour la girouette*/
+void CODEUR_init(TIM_TypeDef *TIMx)
+{
 
-	// c. Configurer les filtres d'entrée si nécessaire (optionnel)
-	TIMx->CCMR1 &= ~(TIM_CCMR1_IC1F | TIM_CCMR1_IC2F); // Pas de filtre (0000)
+	TIMx->CCMR1 |= (1 << 0) | (1 << 8);
+	TIMx->CCER &= ~(TIM_CCER_CC1P | TIM_CCER_CC2P);
+	TIMx->CCER |= (TIM_CCER_CC1E | TIM_CCER_CC2E);
 
-	// 3. Configurer le mode de capture/compare en mode codeur
-	TIMx->SMCR &= ~TIM_SMCR_SMS; // Clear SMS bits
-	TIMx->SMCR |= (3 << 0); // SMS = 011: Mode codeur sur TI1 et TI2
+	TIMx->CCMR1 &= ~(TIM_CCMR1_IC1F | TIM_CCMR1_IC2F);
 
-	// 4. Configurer l'auto-reload (ARR) pour définir la plage de comptage
-	TIMx->ARR = 0xFFFF; // Maximal (16 bits)
+	TIMx->SMCR &= ~TIM_SMCR_SMS;
+	TIMx->SMCR |= (3 << 0);
 
-	// 5. Initialiser le compteur à 0
+	TIMx->ARR = 0xFFFF;
+
 	TIMx->CNT = 0;
 
-	// 6. Activer le compteur
 	TIMx->CR1 |= TIM_CR1_CEN;
 }
 
+/*Active l'interruption correspondant au timer choisi*/
 int NVIC_Enable(TIM_TypeDef *timerAddress, int priority_value)
 {
 	int index = TIMER_exist(timerAddress);
@@ -212,6 +217,7 @@ int NVIC_Enable(TIM_TypeDef *timerAddress, int priority_value)
 	return 0;
 }
 
+/*Permet d'effacer le flag d'interruption du timer passe en parametres*/
 int ResetInterruptFlag(TIM_TypeDef *timerAddress)
 {
 	int index = TIMER_exist(timerAddress);
@@ -238,6 +244,8 @@ int ResetInterruptFlag(TIM_TypeDef *timerAddress)
 	return 0;
 }
 
+
+/*Permet de desactiver l'interruption d'un timer*/
 int NVIC_Disable(TIM_TypeDef *timerAddress)
 {
 	int index = TIMER_exist(timerAddress);
@@ -261,67 +269,87 @@ int NVIC_Disable(TIM_TypeDef *timerAddress)
 	return 0;
 }
 
-int PWM_Init(TIM_TypeDef *timerAddress, int duty){
+
+/*Permet d'initialiser un signal PWM a un rapport cyclique donne*/
+int PWM_Init(TIM_TypeDef *timerAddress, int duty)
+{
 	int index = TIMER_exist(timerAddress);
-	if (duty >= 0 && duty <= 100 && index != 0){
-			int my_arr = 719;
-			//SET TIMER
-			TIMER_Set(timerAddress, my_arr, 0);
-			//AFFECTATION DUTY
-			timerAddress->CCR1 = GET_ARR_Duty(my_arr, duty);
-			timerAddress->CCMR1 &= ~(0xFF);
-			timerAddress->CCMR1 |= (6 << 4);
-			timerAddress->CCMR1 |= (1 << 3);
-			timerAddress->CCER |= (1 << 0);
-			timerAddress->BDTR |= (1 << 15);
-			return 0;
-	}else{
-			return (-1);
-	}
-}
-
-void PWM3_Init(int duty){
-	int my_arr = 59999;
-	// Activer les horloges
-RCC->APB2ENR |= RCC_APB2ENR_IOPBEN;  // Horloge GPIOB
-RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;  // Horloge TIM3
-RCC->APB2ENR |= RCC_APB2ENR_AFIOEN;  // Horloge AFIO
-
-// Configurer PB0 comme sortie alternative push-pull
-GPIOB->CRL &= ~(0xF << (0 * 4)); // Efface la configuration pour PB0
-GPIOB->CRL |= (0xB << (0 * 4)); // Mode 50 MHz, Alternate Function Output Push-Pull
-TIM3->CCMR2 |= (6 << 4);       // PWM mode 1 sur CH3
-TIM3->CCER |= TIM_CCER_CC3E;   // Active CH3
-TIM3->PSC = 23;            // Prescaler: 72 MHz / 72 = 1 MHz
-TIM3->ARR = my_arr;         // Période: 1 MHz / 20000 = 50 Hz
-TIM3->CCR3 =  GET_ARR_Duty(my_arr, duty);
-TIM3->CR1 |= TIM_CR1_CEN;      // Active le Timer
-
-}
-
-int PWM_Set(TIM_TypeDef *timerAddress, int duty){
-	int index = TIMER_exist(timerAddress);
-	if (duty >= 0 && duty <= 100 && index != 0){
-		timerAddress->CCR1 = GET_ARR_Duty(719, duty);
+	if (duty >= 0 && duty <= 100 && index != 0)
+	{
+		int my_arr = 719;
+		// SET TIMER
+		TIMER_Set(timerAddress, my_arr, 0);
+		// AFFECTATION DUTY
+		timerAddress->CCR1 = GET_ARR_Duty(my_arr, duty);
+		timerAddress->CCMR1 &= ~(0xFF);
+		timerAddress->CCMR1 |= (6 << 4);
+		timerAddress->CCMR1 |= (1 << 3);
+		timerAddress->CCER |= (1 << 0);
+		timerAddress->BDTR |= (1 << 15);
 		return 0;
-	}else{
+	}
+	else
+	{
 		return (-1);
 	}
 }
 
-void PWM3_Set(int duty){
+
+/*Configure les broches du timer 3 et ses options pour la generation du signal PWM */
+void PWM3_Init(int duty)
+{
+	int my_arr = 59999;
+	RCC->APB2ENR |= RCC_APB2ENR_IOPBEN; //  GPIOB
+	RCC->APB1ENR |= RCC_APB1ENR_TIM3EN; //  TIM3
+	RCC->APB2ENR |= RCC_APB2ENR_AFIOEN; //  AFIO
+
+	GPIOB->CRL &= ~(0xF << (0 * 4));
+	GPIOB->CRL |= (0xB << (0 * 4));
+	TIM3->CCMR2 |= (6 << 4);	 // PWM mode 1 sur CH3
+	TIM3->CCER |= TIM_CCER_CC3E; // CH3
+	TIM3->PSC = 23;
+	TIM3->ARR = my_arr; // 50 Hz
+	TIM3->CCR3 = GET_ARR_Duty(my_arr, duty);
+	TIM3->CR1 |= TIM_CR1_CEN; // Active le Timer
+}
+
+
+/*Permet de regler le rapport cyclique d'une PWM correspondant a un timer donne*/
+int PWM_Set(TIM_TypeDef *timerAddress, int duty)
+{
+	int index = TIMER_exist(timerAddress);
+	if (duty >= 0 && duty <= 100 && index != 0)
+	{
+		timerAddress->CCR1 = GET_ARR_Duty(719, duty);
+		return 0;
+	}
+	else
+	{
+		return (-1);
+	}
+}
+
+
+/*Permet de regler le rapport cyclique d'une PWM correspondant au timer 3*/
+void PWM3_Set(int duty)
+{
 	TIM3->CCR3 = GET_ARR_Duty(59999, duty);
 }
 
-int PWM_Servo_Set(int duty){
-	int res = 599 + duty*5400/100;
+/*Permet de regler le rapport cyclique d'une PWM correspondant au timer 3 avec correction pour le servo-moteur*/
+int PWM_Servo_Set(int duty)
+{
+	int res = 599 + duty * 5400 / 100;
 	TIM3->CCR3 = res;
 	return res;
 }
 
-uint16_t GET_ARR_Duty(int _arr, int _duty){
-	return _arr*_duty/100;
+/*Renvoi une valeur d'ARR pour un rapport cyclique voulu */
+uint16_t GET_ARR_Duty(int _arr, int _duty)
+{
+	return _arr * _duty / 100;
 }
+
 
 /* ========== REGION : GPIO ========== */
 
@@ -350,7 +378,6 @@ int GPIO_Assignment(GPIO_TypeDef **GPIO, int port)
 	}
 	return (0);
 }
-
 // Configure le mode du GPIO : Retourne -1 si le port n'existe pas, sion 0 si le processus a ete effectue avec succes.
 int GPIO_SetPinConfig(GPIO_TypeDef *GPIO, int pin, int mode, int configuration)
 {
@@ -376,13 +403,13 @@ int GPIO_SetPinConfig(GPIO_TypeDef *GPIO, int pin, int mode, int configuration)
 	if (configuration == INPUT_PULL_DOWN)
 	{
 		config_value = CONFIGURATION_PULL_UP_DOWN << 2 | mode;
-		mask = ~(0x01 << pin); // PULL DOWN : BIT PxODR � 0
+		mask = ~(0x01 << pin); // PULL DOWN : BIT PxODR = 0
 		GPIO->ODR &= mask;
 	}
 	else if (configuration == INPUT_PULL_UP)
 	{
 		config_value = CONFIGURATION_PULL_UP_DOWN << 2 | mode;
-		mask = (0x01 << pin); // PULL UP : BIT PxODR � 1
+		mask = (0x01 << pin); // PULL UP : BIT PxODR = 1
 		GPIO->ODR |= mask;
 	}
 	else if (configuration > INPUT_PULL_UP)
@@ -408,28 +435,28 @@ int GPIO_SetPinConfig(GPIO_TypeDef *GPIO, int pin, int mode, int configuration)
 	return (0);
 }
 
-// Mise a jour du mode (SET/RESET) du GPIO
+
+/* Passe a l'etat haut la broche donnee en parametre */
 int GPIO_Pin_Set(GPIO_TypeDef *GPIO, int pin)
 {
 	GPIO->BSRR = 0x01 << pin;
 	return 0;
 }
 
+/* Passe a l'etat bas la broche donnee en parametre */
 int GPIO_Pin_Reset(GPIO_TypeDef *GPIO, int pin)
 {
 	GPIO->BRR = 0x01 << pin;
 	return 0;
 }
 
-// Lecture de l'etat du GPIO : Retourne le bit en question (1 ou 0)
+/* Lecture de l'etat d'une broche : Retourne le bit en question (1 ou 0) */
 int GPIO_ReadPin(GPIO_TypeDef *GPIO, int pin)
 {
 	return ((GPIO->IDR >> pin) & 0x01);
 }
 
-/*
-Lecture de l'etat du GPIO
-*/
+/* Lecture de l'etat d'une broche d'un GPIO */
 int GPIO_PIN_Read(int port, int pin)
 {
 	GPIO_TypeDef *GPIO = 0;
@@ -441,6 +468,7 @@ int GPIO_PIN_Read(int port, int pin)
 
 /* ========== REGION : CLOCK & TIMER ========== */
 
+/*Permet d'allumer ou eteindre l'horloge d'un GPIO */
 int Clock_Config(int config, GPIO_TypeDef *GPIO)
 {
 	if (config == SET)
@@ -457,10 +485,10 @@ int Clock_Config(int config, GPIO_TypeDef *GPIO)
 	}
 	return 0;
 }
-/*
-config == SET or RESET
-*/
-int TIMER_Config(TIM_TypeDef *timerAddress, int config, int frequency)
+
+
+/* Permet d'allumer ou eteindre un timer pour une frequence donnee */
+int TIMER_Config(TIM_TypeDef *timerAddress, int config, int frequency) /*config == SET or RESET*/
 {
 	uint16_t ARR_value = GET_ARR(frequency);
 	switch (config)
@@ -477,11 +505,10 @@ int TIMER_Config(TIM_TypeDef *timerAddress, int config, int frequency)
 	return 0;
 }
 
+
 /* ========== REGION : GPIO ========== */
 
-/*
-Initialise le pin du GPIO
-*/
+/* Initialise la broche du GPIO */
 int GPIO_PIN_Init(int port, int pin, int mode, int config)
 {
 	GPIO_TypeDef *GPIO = 0;
@@ -491,9 +518,7 @@ int GPIO_PIN_Init(int port, int pin, int mode, int config)
 	return GPIO_SetPinConfig(GPIO, pin, mode, config);
 }
 
-/*
-Mise a jour du GPIO en SET (1)
-*/
+/* Mise a jour du GPIO en SET (1) */
 int GPIO_PIN_Config(int port, int pin, int conf)
 {
 	GPIO_TypeDef *GPIO = 0;
@@ -514,6 +539,7 @@ int GPIO_PIN_Config(int port, int pin, int conf)
 	return 0;
 }
 
+/* Tableau de pointeur de fonction pour le interruptions */
 void (*TIMER_Interrupt_Function_Pointer[])() = {
 	0,
 	0,
@@ -534,6 +560,7 @@ void (*TIMER_Interrupt_Function_Pointer[])() = {
 	0,
 	0};
 
+/* Permet d'executer une fonction a une frequence donnee, liee a un timer */
 int TIMER_Interruption_Setup(TIM_TypeDef *timerAddress, int config, int frequency, void (*functionPointer)(void)){
 	int index = TIMER_exist(timerAddress);
 	if (index == 0)
@@ -546,6 +573,7 @@ int TIMER_Interruption_Setup(TIM_TypeDef *timerAddress, int config, int frequenc
 	return (0);
 }
 
+/* Fonction d'interruption liee au debordement du timer 1 */
 void TIM1_IRQHandler(void)
 {
 	ResetInterruptFlag(TIM1);
@@ -553,6 +581,7 @@ void TIM1_IRQHandler(void)
 		(*TIMER_Interrupt_Function_Pointer[1])();
 }
 
+/* Fonction d'interruption liee au debordement du timer 2 */
 void TIM2_IRQHandler(void)
 {
 	ResetInterruptFlag(TIM2);
@@ -560,22 +589,25 @@ void TIM2_IRQHandler(void)
 		(*TIMER_Interrupt_Function_Pointer[2])();
 }
 
+/* Fonction d'interruption liee au debordement du timer 3 */
 void TIM3_IRQHandler(void)
 {
 	ResetInterruptFlag(TIM3);
 	if (TIMER_Interrupt_Function_Pointer[3] != 0)
 		(*TIMER_Interrupt_Function_Pointer[3])();
 }
-/*
+
+/* Fonction d'interruption liee au debordement du timer 4 */
 void TIM4_IRQHandler(void)
 {
 	ResetInterruptFlag(TIM4);
 	if (TIMER_Interrupt_Function_Pointer[4] != 0)
 		(*TIMER_Interrupt_Function_Pointer[4])();
 }
-*/
+
 /* ========== REGION : ADC ========== */
 
+/*Permet de demarrer l'ADC1 sur la broche PC5 (CH15)*/
 void Start_ADC1(int PORT, int PIN){
 	GPIO_PIN_Init(PORT, PIN, INPUT, ANALOG_MODE);
 	RCC->APB2ENR |= RCC_APB2ENR_ADC1EN;
@@ -586,6 +618,7 @@ void Start_ADC1(int PORT, int PIN){
 	ADC1->CR2 |= ADC_CR2_EXTTRIG;
 }
 
+/* Retourne la valeur convertie par l'ADC1 */
 uint16_t Read_ADC1(){
 	ADC1->CR2 |= ADC_CR2_SWSTART; //Demarrage de conversion SWSTART
 	while (!(((ADC1->SR) >> 1) & 0x01)){}
@@ -594,51 +627,54 @@ uint16_t Read_ADC1(){
 
 /* ========== REGION : USART ========== */
 
+/* Initialise l'USART2 pour un baud rate de 9600 baud */
 void USART2_init(){
-	RCC->APB1ENR |= RCC_APB1ENR_USART2EN; // Activer l'horloge pour USART2 sur APB1
-	//RCC->APB1ENR |= RCC_IOPAEN | RCC_IOPBEN | RCC_IOPCEN;
-	
-	USART2->CR1 &= ~(USART_CR1_UE); // Désactivation USART pour configurer les registres
-	USART2->CR1 &= ~(USART_CR1_M);  // Longueur de mot 8 bits
-	USART2->CR2 &= ~(USART_CR2_STOP); // 1 bit de stop
-	USART2->CR3 &= ~(USART_CR3_DMAR); // Désactiver DMAR si le DMA n'est pas utilisé
-	USART2->BRR = 36000000 / 9600; // Définir le baud rate
-	USART2->CR1 |= USART_CR1_TE | USART_CR1_RE; // Activation transmission et réception
-	USART2->CR1 |= USART_CR1_UE; // Activation USART après configuration
+	RCC->APB1ENR |= RCC_APB1ENR_USART2EN; 
+	USART2->CR1 &= ~(USART_CR1_UE); 
+	USART2->CR1 &= ~(USART_CR1_M);  
+	USART2->CR2 &= ~(USART_CR2_STOP); 
+	USART2->CR3 &= ~(USART_CR3_DMAR); 
+	USART2->BRR = 36000000 / 9600; 
+	USART2->CR1 |= USART_CR1_TE | USART_CR1_RE; 
+	USART2->CR1 |= USART_CR1_UE; 
 }
 
+/* Initialise l'USART1 pour un baud rate de 9600 baud */
 void USART1_init(){
-	//RCC->APB1ENR |= RCC_IOPAEN | RCC_IOPBEN | RCC_IOPCEN;
 	RCC->APB2ENR |= RCC_APB2ENR_USART1EN | RCC_APB2ENR_IOPAEN;
 	
-	USART1->CR1 &= ~(USART_CR1_UE); // Désactivation USART pour configurer les registres
-	USART1->CR1 &= ~(USART_CR1_M);  // Longueur de mot 8 bits
-	USART1->CR2 &= ~(USART_CR2_STOP); // 1 bit de stop
-	USART1->CR3 &= ~(USART_CR3_DMAR); // Désactiver DMAR si le DMA n'est pas utilisé
-	USART1->BRR = 72000000 / 9600; // Définir le baud rate
-	USART1->CR1 |= USART_CR1_TE | USART_CR1_RE; // Activation transmission et réception
-	USART1->CR1 |= USART_CR1_UE; // Activation USART après configuration
+	USART1->CR1 &= ~(USART_CR1_UE);
+	USART1->CR1 &= ~(USART_CR1_M); 
+	USART1->CR2 &= ~(USART_CR2_STOP);
+	USART1->CR3 &= ~(USART_CR3_DMAR); 
+	USART1->BRR = 72000000 / 9600; 
+	USART1->CR1 |= USART_CR1_TE | USART_CR1_RE; 
+	USART1->CR1 |= USART_CR1_UE; 
 }
 
+/* Envoie une chaine de characteres via l'USART2 */
 void USART2_Transmit(char *data) {
     while (*data) {
-        while (!(USART2->SR & USART_SR_TXE)); // Wait for TX buffer to be empty
-        USART2->DR = *data++; // Transmit data
+        while (!(USART2->SR & USART_SR_TXE));
+        USART2->DR = *data++; 
     }
 }
 
+/* Revoie le charactere recu via l'USART2 */
 char USART2_Receive(void) {
-    while (!(USART2->SR & USART_SR_RXNE)); // Attendre que le registre de réception soit plein
-    return (char)(USART2->DR & 0xFF); // Lire le caractère reçu (8 bits)
+    while (!(USART2->SR & USART_SR_RXNE)); 
+    return (char)(USART2->DR & 0xFF); 
 }
 
+/* Envoie une chaine de characteres via l'USART1 */
 void USART1_Transmit(char *data) {
     while (*data) {
-        while (!(USART1->SR & USART_SR_TXE)); // Wait for TX buffer to be empty
-        USART1->DR = *data++; // Transmit data
+        while (!(USART1->SR & USART_SR_TXE)); 
+        USART1->DR = *data++; 
     }
 }
 
+/* Revoie le charactere recu via l'USART1, un delais d'expiration de la lecture empeche le programme de bloquer */
 char USART1_Receive(void) {
 		int tmp = 0;
     while (!(USART1->SR & USART_SR_RXNE) && (tmp < 100000)){ tmp++; }; // Attendre que le registre de réception soit plein
@@ -651,35 +687,32 @@ char USART1_Receive(void) {
 
 /* ========== REGION : GPIO_INTERRUPTION ========== */
 
-// Configuration de l'EXTI pour PC10
+/* Configure la broche PC10 en interruption EXTI pour la remise a zero de la girouette */
 void GPIO_EXTI_PC10_Init(void) {
-    // Activer l'horloge pour GPIOC et AFIO
     RCC->APB2ENR |= RCC_APB2ENR_IOPCEN | RCC_APB2ENR_AFIOEN;
 
-    // Mapper PC10 à EXTI10
-    AFIO->EXTICR[2] &= ~(AFIO_EXTICR3_EXTI10); // Clear
-    AFIO->EXTICR[2] |= (2 << 8); // GPIOC -> EXTI10
+    AFIO->EXTICR[2] &= ~(AFIO_EXTICR3_EXTI10);
+    AFIO->EXTICR[2] |= (2 << 8); 
 
-    // Configurer EXTI10 pour déclencher sur flanc descendant
-    EXTI->IMR |= (1 << 10);  // Activer interruption pour EXTI10
-    EXTI->EMR &= ~(1 << 10); // Désactiver événement (uniquement interruption)
-    EXTI->RTSR &= ~(1 << 10); // Désactiver flanc montant
-    EXTI->FTSR |= (1 << 10);  // Activer flanc descendant
+    EXTI->IMR |= (1 << 10);  
+    EXTI->EMR &= ~(1 << 10); 
+    EXTI->RTSR &= ~(1 << 10); 
+    EXTI->FTSR |= (1 << 10); 
 
-    // Activer EXTI10 dans le NVIC
     NVIC_EnableIRQ(EXTI15_10_IRQn);
-    NVIC_SetPriority(EXTI15_10_IRQn, 2); // Priorité d'interruption
+    NVIC_SetPriority(EXTI15_10_IRQn, 2); 
 }
 
-// Gestionnaire d'interruption pour EXTI15_10 (PC10 est sur cette ligne)
+/* Gestionnaire d'interruption pour EXTI15_10 (PC10 est sur cette ligne) */
 void EXTI15_10_IRQHandler(void) {
-    if (EXTI->PR & (1 << 10)) { // Vérifier si EXTI10 est la source
-        EXTI->PR |= (1 << 10); // Effacer le drapeau d'interruption
+    if (EXTI->PR & (1 << 10)) { 
+        EXTI->PR |= (1 << 10);
         			
 				TIM2->CNT = 700;
     }
 }
 
+/* Fonction d'envoi en SPI d'un octet */
 void MySPI_WriteRegister(char reg, char value)
 {
 	MySPI_Clear_NSS();
@@ -688,6 +721,7 @@ void MySPI_WriteRegister(char reg, char value)
 	MySPI_Set_NSS();
 }
 
+/* Fonction de lecture en SPI d'un registre */
 int MySPI_ReadRegister(char reg)
 {
 	int value;
