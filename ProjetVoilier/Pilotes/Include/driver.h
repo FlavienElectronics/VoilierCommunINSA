@@ -1,4 +1,6 @@
 #include "stm32f10x.h"
+#include "MySPI.h"
+#include "MyI2C.h"
 
 // Specifications internes du STM32
 #define FREQUENCE_STM32 72000000
@@ -70,6 +72,19 @@
 #define PRIORITY_LOW 3
 #define PRIORITY_LEGACY 5
 
+// Definition des adresses des registres de l'ADXL345
+#define POWER_CTL 0x2D 
+#define DATA_FORMAT 0x31 
+#define BW_RATE 0x2C 
+#define DATAX0 0x32 
+#define DATAX1 0x33 
+#define DATAY0 0x34 
+#define DATAY1 0x35 
+#define DATAZ0 0x36 
+#define DATAZ1 0x37 
+#define MASK 0x80
+#define GRAVITE 9.81
+
 // Function declarations
 void Clock_Init_All(void);
 int Clock_Set(GPIO_TypeDef *GPIO);
@@ -118,11 +133,17 @@ char USART1_Receive(void);
 void USART1_init();
 void USART2_init();
 
-void I2C1_Init(void);
-void I2C_Start(uint8_t address, uint8_t direction);
-void I2C_Stop(void);
-void I2C_Write(uint8_t data);
-uint8_t I2C_ReadAck(void);
-uint8_t I2C_ReadNack(void);
-void DS1307_Write(uint8_t reg, uint8_t data);
-uint8_t DS1307_Read(uint8_t reg);
+// Partie Anti-Chavirement
+
+/*=============================== SPI =============================*/
+
+/* Fonction d'écriture SPI */
+void MySPI_WriteRegister(char reg, char value);
+
+/* Fonction de lecture SPI */
+int MySPI_ReadRegister(char reg);
+
+/*=============================== I2C =============================*/
+
+/* Gestion d'erreur de communication I2C */
+void I2C_Error_Callback(void);

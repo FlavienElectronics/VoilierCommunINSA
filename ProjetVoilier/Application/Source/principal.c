@@ -3,6 +3,8 @@
 #include "driver.h"		 // Contient les macros des ports et pins
 #include <stdio.h>
 
+extern char I2C_Error;
+
 int main(void)
 {
 
@@ -14,18 +16,18 @@ int main(void)
 
 	// Initialisation des PIN A2 et A3 pour la communication UART1
 	GPIO_PIN_Init(PORT_A, PIN_2, OUTPUT_10MHZ, ALTERNATE_FUNCTION_OUTPUT_PUSH_PULL); // PA2 en mode alternatif pour TX
-	GPIO_PIN_Init(PORT_A, PIN_3, INPUT, FLOATING_INPUT);							 // PA3 en entrÃ©e flottante pour RX
+	GPIO_PIN_Init(PORT_A, PIN_3, INPUT, FLOATING_INPUT);							 // PA3 en entrée flottante pour RX
 
-	// DÃ©marrage des TIMERS 1,2 et 3
+	// Démarrage des TIMERS 1,2 et 3
 	TIMER_init(TIM1);  // TIMER 1 : PWM du moteur
-	TIMER_init(TIM2);  // TIMER 2 : Codeur incrÃ©mental de la girouette
+	TIMER_init(TIM2);  // TIMER 2 : Codeur incrémental de la girouette
 	PWM_Init(TIM1, 0); // Initialisation de la PWM du moteur
 
 	// Initialisation et mise en marche des UARTS 1 et 2
 	USART1_init();
 	USART2_init();
 
-	// Initialisation de la PIN C12 pour le contrÃ´le du sens du moteur
+	// Initialisation de la PIN C12 pour le contrôle du sens du moteur
 	GPIO_PIN_Init(PORT_C, PIN_12, OUTPUT_50MHZ, GENERAL_PURPOSE_OUTPUT_PUSH_PULL);
 	GPIO_PIN_Config(PORT_C, PIN_12, 0);
 
@@ -38,22 +40,22 @@ int main(void)
 	GPIO_PIN_Init(PORT_A, PIN_1, INPUT, FLOATING_INPUT);  // GIROUETTE CHB
 	GPIO_PIN_Init(PORT_C, PIN_10, INPUT, FLOATING_INPUT); // GIROUETTE INDEX
 
-	// Broche PWM de sortie pour contrÃ´le servo moteur
+	// Broche PWM de sortie pour contrôle servo moteur
 	PWM3_Init(50); // PWM du servo-moteur
 
 	Welcome();
 
-	// DÃ©claration de l'interruption sur PC10 pour l'index de la girouette
+	// Déclaration de l'interruption sur PC10 pour l'index de la girouette
 	GPIO_EXTI_PC10_Init();
 
-	// DÃ©marrage ADC : PIN C0 pour la lecture de la tension de la batterie
+	// Démarrage ADC : PIN C0 pour la lecture de la tension de la batterie
 	Start_ADC1(PORT_C, PIN_4);
 
-	// Initialisation et dÃ©marrage du codeur incrÃ©mental
+	// Initialisation et démarrage du codeur incrémental
 	ENCODEUR_init(TIM2);
 
 	MySPI_Init(SPI1); // Initialisation SPI
-	ADXL_Init();	  // Initialisation ADXL345
+	ADXL345_Init();	  // Initialisation ADXL345
 
 	MyI2C_Init(I2C1, 2, I2C_Error_Callback); // Initialiser I2C1 avec la fonction callback d'erreur
 
@@ -100,8 +102,8 @@ int main(void)
 
 		if (I2C_Error)
 		{
-			USART2_Transmit("Erreur I2C dÃ©tectÃ©e !\n");
-			I2C_Error = 0; // RÃ©initialiser le flag d'erreur
+			USART2_Transmit("Erreur I2C détectée !\n");
+			I2C_Error = 0; // Réinitialiser le flag d'erreur
 		}
 		else
 		{

@@ -1,8 +1,9 @@
 #include "stm32f10x.h"
 #include <math.h>
-#include "driver.h"
-#include <stdio.h> 
 
+#include "driver.h"
+#include "MySPI.h"
+#include "MyI2C.h"
 
 //=================================================
 // Partie Anti-Chavirement
