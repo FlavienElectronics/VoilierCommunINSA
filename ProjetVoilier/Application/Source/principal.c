@@ -80,17 +80,20 @@ int main(void)
 
 	while (1)
 	{
+		/* 1- Gestion du dialogue Xbee*/
 		char reception = USART1_Receive();
+		int tmp = (256 - (int)reception);	// 100->1    : GAUCHE 	/ 	255->156  : DROITE
+		/* 1- END*/
 
-		// 100->1    : GAUCHE
-		// 255->156  : DROITE
-
-		int tmp = (256 - (int)reception);
-
+		/* 2- Lecture et affichage du niveau de batterie */
 		int bat = BatteryRead();
+		char buffer_batterie[32];
+		sprintf(buffer_batterie, "Charge batterie : %d pourcent", bat);
+		USART1_Transmit(buffer_batterie);
+		USART1_Transmit("\n\r");
+		/* 2- END */
 
-		int val = TIM2->CNT;
-
+		/* 3- Gestion du sens de rotation de la plateforme tournante */
 		if (reception < 101 & reception != 0)
 		{
 			PWM_Set(TIM1, reception);
@@ -105,15 +108,15 @@ int main(void)
 		{
 			PWM_Set(TIM1, 0);
 		}
+		/* 3- END */
 
+		/* 4- Gestion du servo moteur lie au bordage des voiles */
+		int val = TIM2->CNT;
 		if (risqueChavirement == 0)
 			PWM_Servo_Set((100 * val) / (1400));
+		/* 4- END */
 
-		char buffer_batterie[32];
-		sprintf(buffer_batterie, "Charge batterie : %d pourcent", bat);
-		USART1_Transmit(buffer_batterie);
-		USART1_Transmit("\n\r");
-
+		/* 5- Gestion de l'heure avec la RTC */
 		if (I2C_Error)
 		{
 			USART2_Transmit("Erreur I2C detectee !\n");
@@ -123,7 +126,10 @@ int main(void)
 		{
 			Display_Time(); // Lire et afficher l'heure
 		}
+		/* 5- END */
 
+		/* 6- Gestion du risque de chavirement du navire */
 		risqueChavirement = ADXL345_anti_chavirement();
+		/* 6- END*/
 	}
 }
