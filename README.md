@@ -7,8 +7,9 @@ Bienvenue dans le projet **VOILIER** de l'INSA de Toulouse (2024/2025)
     CARVALHO Flavien
     LESPIAUCQ Denis
             Cette équipe s'est occupée des parties suivantes :
-                - Girouette + Codeur incrémental (mesure du sens du vent)
-                - Module Xbee (rotation de la plateforme)
+                - Codeur incrémental (mesure du sens du vent avec la girouette)
+                - Communication USART (reception module Xbee) 
+                - Génération PWM et bit de sens (rotation de la plateforme)
                 - Pont diviseur de tension (mesure batterie)
                 - Servo moteur (bordage des voiles)
 
