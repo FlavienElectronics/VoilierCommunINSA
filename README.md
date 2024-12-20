@@ -2,6 +2,8 @@
 
 Bienvenue dans le projet **VOILIER** de l'INSA de Toulouse (2024/2025)
 
+GROUPE 4AE-SE3
+
 ## 🚸 Equipe 1
 
     CARVALHO Flavien
